@@ -149,9 +149,10 @@ public class Game extends JFrame {
                 ballSpeedY = -ballSpeedY; //彈回
                 ballSpeedY--;
                 
-                System.out.println("藍色得分!!");
+                System.out.println("藍色已攔截");
             } else {
-            	System.out.println("藍色已出界");
+            	
+            	System.out.println("紅色得分!!");
             	score_red++;
                 gameOver();
             }
@@ -164,10 +165,10 @@ public class Game extends JFrame {
             if (ballX >= paddleX_RED && ballX <= paddleX_RED + PADDLE_WIDTH_RED) {
                 ballSpeedY = -ballSpeedY;
                 ballSpeedY++;
-                
-        System.out.println("紅色得分!!");
+                System.out.println("紅色已攔截");
+        
             } else {
-      System.out.println("紅色已出界");
+            	 System.out.println("藍色得分!!");
       			score_bule++;
                 gameOver();
                 
@@ -242,8 +243,7 @@ public class Game extends JFrame {
 
         //執行續停止
         if(score_bule==2) {
-        	 score_bule=0;
-             score_red=0;
+        	 
         choice = JOptionPane.showConfirmDialog(this,"藍方獲勝!" + "藍方分數" + score_bule+"紅方分數"+score_red+ //遊戲結束跳出視窗
                 ". Do you want to play again?", "Game Over", JOptionPane.YES_NO_OPTION); //視窗顯示YES OR NO
         }else if(score_red==2)  {
@@ -253,7 +253,7 @@ public class Game extends JFrame {
     
 
         if (choice == JOptionPane.YES_OPTION) { //判斷如果按了YES就重新開始遊戲initializeGame() //YES_OPTION 布靈=1
-           
+        	
         	initializeGame();
         	timer.stop();
             
