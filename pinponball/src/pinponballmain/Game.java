@@ -1,11 +1,29 @@
 package pinponballmain;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.Properties;
+
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
 
 public class Game extends JFrame {
     private static final int WIDTH = 600; //視窗寬
@@ -54,6 +72,7 @@ public class Game extends JFrame {
 
         gamePanel.setFocusable(true); //鍵盤移動開關
         gamePanel.setBackground(Color.BLACK);//視窗背景
+        showInputDialog();
         
         gamePanel.addKeyListener(new KeyAdapter() {
        
@@ -86,8 +105,8 @@ public class Game extends JFrame {
         ballY = BALL_INITIAL_Y; //使求在藍方Y中間
         paddleX = WIDTH / 2 - PADDLE_WIDTH_BULE / 2;	//視窗寬度/2-藍方寬度=使藍方在正中間位子
         paddleX_RED = WIDTH / 2 - PADDLE_WIDTH_RED / 2; //視窗寬度/2-紅方寬度=使紅方在正中間位子
-        ballSpeedX = 2; //球速X
-        ballSpeedY = -2;//球速Y
+        ballSpeedX = 6; //球速X
+        ballSpeedY = -6;//球速Y
         
         isGameRunning = true; //遊戲是否進行中初始化(即為剛開始遊戲=遊戲進行中 默認為true)
 
@@ -133,7 +152,7 @@ public class Game extends JFrame {
                 System.out.println("藍色得分!!");
             } else {
             	System.out.println("藍色已出界");
-            	score_bule++;
+            	score_red++;
                 gameOver();
             }
         }
@@ -149,7 +168,7 @@ public class Game extends JFrame {
         System.out.println("紅色得分!!");
             } else {
       System.out.println("紅色已出界");
-      			score_red++;
+      			score_bule++;
                 gameOver();
                 
                 
@@ -175,9 +194,11 @@ public class Game extends JFrame {
         g.fillRect(paddleX_RED,PADDLE_Y_RED, PADDLE_WIDTH_RED, PADDLE_HEIGHT_RED);//玩家紅方
 
         g.setColor(Color.blue);//分數顯示
-        g.drawString("Score: " + score_bule, 10, 20);
+        g.drawString("藍方分數: " + score_bule, 10, 20);
         g.setColor(Color.red);
-        g.drawString("Score: " + score_red, 10, 40);
+        g.drawString("紅方分數: " + score_red, 10, 40);
+        g.setColor(Color.black);
+        g.drawString("玩家名稱: " + playerName, 10, 60);
     }
 
     private void handleKeyPress(KeyEvent e) {
@@ -220,13 +241,13 @@ public class Game extends JFrame {
     	int choice = 0;
 
         //執行續停止
-        if(score_bule==5) {
+        if(score_bule==2) {
         	 score_bule=0;
              score_red=0;
-        choice = JOptionPane.showConfirmDialog(this,"紅方獲勝!" + "紅方分數" + score_red+"藍方分數"+score_bule + //遊戲結束跳出視窗
+        choice = JOptionPane.showConfirmDialog(this,"藍方獲勝!" + "藍方分數" + score_bule+"紅方分數"+score_red+ //遊戲結束跳出視窗
                 ". Do you want to play again?", "Game Over", JOptionPane.YES_NO_OPTION); //視窗顯示YES OR NO
-        }else if(score_red==5)  {
-         choice = JOptionPane.showConfirmDialog(this,"藍方獲勝!" + "紅方分數" + score_red+"藍方分數"+score_bule + //遊戲結束跳出視窗
+        }else if(score_red==2)  {
+         choice = JOptionPane.showConfirmDialog(this,"紅方獲勝!" + "藍方分數" + score_bule+"紅方分數"+score_red + //遊戲結束跳出視窗
                     ". Do you want to play again?", "Game Over", JOptionPane.YES_NO_OPTION); //視窗顯示YES OR NO
         }
     
@@ -238,10 +259,38 @@ public class Game extends JFrame {
             
             
         } else {
-        	 
+        	balljdbc01();
             System.exit(0);                    //else案NO則退出
         }
    }
+    public void balljdbc01() {
+    	
+    
+            try {
+                Properties prop = new Properties();
+                prop.put("user", "root");
+                prop.put("password", "root");
+                Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/iii",prop);
+                
+                String query = "INSERT INTO jerryballgame(name, score) VALUES (?, ?)";
+                PreparedStatement stmt = conn.prepareStatement(query);
+                
+                stmt.setString(1, playerName);
+                stmt.setInt(2, score_bule);
+                
+                try {
+                    int n = stmt.executeUpdate();
+                } catch (Exception e) {
+                    System.out.println(playerName);//測試是否有抓到
+                    System.out.println(score_bule);//測試是否有抓到
+                }
+                
+               
+                
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Game::new);
