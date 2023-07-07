@@ -28,10 +28,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import com.mysql.cj.protocol.Resultset;
+import com.mysql.cj.sasl.ScramSha1SaslClient;
 import com.mysql.cj.xdevapi.Result;
 
 
 public class Game extends JFrame {
+	
     private static final int WIDTH = 600; //視窗寬
     private static final int HEIGHT = 800;//視窗高
 
@@ -43,8 +45,10 @@ public class Game extends JFrame {
     private int score_bule;//分數
     private int score_red;//分數
     private boolean isGameRunning;
-    private ArrayList<String>  Player = new ArrayList<>();
-    private ArrayList<Integer> Score = new ArrayList<>();
+    private String Player;
+    private int Score;
+    private int countdown = 500; // 倒计时的初始值
+    
    
     
     private static final int PADDLE_WIDTH_BULE= 100;//藍方寬度 //強化玩家
@@ -62,6 +66,7 @@ public class Game extends JFrame {
     private String playerName;
 
     public Game() {
+    	
     	rank();//調用排行榜sql
         setTitle("足球小遊戲"); //視窗標題
         setSize(WIDTH, HEIGHT); //視窗大小(帶入變數)
@@ -140,6 +145,13 @@ public class Game extends JFrame {
     }
 
     private void updateGame() {  //使球隨時更新座標(移動)
+    	 if (countdown > 0) {
+     	    countdown--;
+     	    if (countdown == 0) {
+     	        gameOver();
+     	    }
+     	}
+    	
     	ballX += ballSpeedX;  //藍方輸了重新發球
         ballY += ballSpeedY;
 //    	if() {
@@ -193,7 +205,9 @@ public class Game extends JFrame {
                 
             }
         }
+       
  }
+    
 
     private void draw(Graphics g) {
     	try {
@@ -225,6 +239,9 @@ public class Game extends JFrame {
         g.drawString("玩家名稱: " + playerName, 10, 60);
         g.drawString("玩家排行:"+Player, 10,80);
         g.drawString("玩家分數:"+Score, 10,100);
+        g.setColor(Color.black);
+        g.setFont(new Font("Arial", Font.BOLD, 10));
+        g.drawString("倒數時間: " + countdown, 100, 100);
         repaint();
     }
     
@@ -262,46 +279,56 @@ public class Game extends JFrame {
     
 
     private void gameOver() {
-
+          
     	  isGameRunning = false;
     	  initializeGame();
     	  timer.stop();
     	  
-		if (score_bule == 6) {
+		if (countdown == 0) {
+			
+    	 if(score_bule>score_red) {
+    		  int choice = JOptionPane.showConfirmDialog(this, "遊戲結束藍方勝利 ", "Game Over", JOptionPane.YES_NO_OPTION);
 
-    	   int choice = JOptionPane.showConfirmDialog(this, "遊戲結束藍方勝利 ", "Game Over", JOptionPane.YES_NO_OPTION);
+       	   if (choice == JOptionPane.YES_OPTION) {
+       		countdown=1000;
+       	    balljdbc01();
+       	    rank();
+       	    score_bule = 0;
+       	    score_red = 0;
+       	    initializeGame();
+       	    timer.stop();
 
-    	   if (choice == JOptionPane.YES_OPTION) {
-    	    balljdbc01();
-    	    rank();
-    	    score_bule = 0;
-    	    initializeGame();
-    	    timer.stop();
+       	   } else {
+       	    balljdbc01();
+       	    
 
-    	   } else {
-    	    balljdbc01();
-    	    
+       	    System.exit(0);
+       	   }
+    	 }else if(score_red>score_bule) {
+    		
+    		  int choice = JOptionPane.showConfirmDialog(this, "遊戲結束紅方勝利 ", "Game Over", JOptionPane.YES_NO_OPTION);
 
-    	    System.exit(0);
-    	   }
+       	   if (choice == JOptionPane.YES_OPTION) {
+       		countdown=1000;
+       	    balljdbc01();
+       	    rank();
+       	    score_bule = 0;
+       	    score_red = 0;
+       	    initializeGame();
+       	    timer.stop();
 
-    	  } else if (score_red == 5) {
+       	   } else if(choice == JOptionPane.NO_OPTION){
+       		balljdbc01();
+       		System.exit(0);
+       	  
+       	   }else {
+       		JOptionPane.showInputDialog("OK", "OK");
+    		   
+       		initializeGame();
+       	   }
+    	 }
 
-    	   int choice = JOptionPane.showConfirmDialog(this, "遊戲結束紅方勝利", "Game Over", JOptionPane.YES_NO_OPTION);
-    	   if (choice == JOptionPane.YES_OPTION) {
-    		   System.out.println("OK");
-    	    balljdbc01();
-    	    rank();
-    	    score_red = 0;
-    	    initializeGame();
-    	    timer.stop();
-
-    	   } else {
-    	    System.exit(0);
-
-    	   }
-
-    	  }
+    	  } 
 
     	 }
     public void changeball() {  //換藍色發球(代表紅方已射門得分)
@@ -315,34 +342,64 @@ public class Game extends JFrame {
     }
     public void balljdbc01() {
     	
-    
-            try {
-                Properties prop = new Properties();
-                prop.put("user", "root");
-                prop.put("password", "root");
-                Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/iii",prop);
-                
-                String sql = "INSERT INTO jerryballgame(name, score) VALUES (?, ?)";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                
-                stmt.setString(1, playerName);
-                stmt.setInt(2, score_bule);
-                
-                
-                try {
-                    int n = stmt.executeUpdate();
+    	
+            if(score_bule>score_red) {
+            	try {
+                    Properties prop = new Properties();
+                    prop.put("user", "root");
+                    prop.put("password", "root");
+                    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/iii",prop);
+                    
+                    String sql = "INSERT INTO jerryballgame(name, score) VALUES (?, ?)";
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    
+                    stmt.setString(1, playerName);
+                    stmt.setInt(2, score_bule);
+                    
+                    
+                    
+                    try {
+                        int n = stmt.executeUpdate();
+                    } catch (Exception e) {
+                     
+                    }
+                    
+                   
+                    
                 } catch (Exception e) {
-                    System.out.println(playerName);//測試是否有抓到
-                    System.out.println(score_bule);//測試是否有抓到
+                    System.out.println(e);
                 }
-                
-               
-                
-            } catch (Exception e) {
-                System.out.println(e);
+            }else if(score_red>score_bule) {
+            	try {
+                    Properties prop = new Properties();
+                    prop.put("user", "root");
+                    prop.put("password", "root");
+                    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/iii",prop);
+                    
+                    String sql = "INSERT INTO jerryballgame(name, score) VALUES (?, ?)";
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    
+                    stmt.setString(1, playerName);
+                    stmt.setInt(2, score_red);
+                    
+                    
+                    
+                    try {
+                        int n = stmt.executeUpdate();
+                    } catch (Exception e) {
+                     
+                    }
+                    
+                   
+                    
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }else {
+            	initializeGame();
             }
         }
-    
+    //-------------------------
     public void rank() { //排行榜
     	
         
@@ -356,8 +413,8 @@ public class Game extends JFrame {
             PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             while(rs.next()) {
-            	Player.add(rs.getString("name"));
-            	Score.add(rs.getInt("score"));
+            	Player=rs.getString("name");
+            	Score=rs.getInt("score");
             }
            
 
